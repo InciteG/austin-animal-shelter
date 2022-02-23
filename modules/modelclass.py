@@ -193,12 +193,12 @@ class ModelTrainer():
     
     
     '''
-    def __init__(self, model='log',test_size=.2,over_samp=None,under_samp=None,over_weight=.2,under_weight=.3):
+    def __init__(self,data_loc=r'..\data\features_base.csv',model='log',test_size=.2,over_samp=None,under_samp=None,over_weight=.2,under_weight=.3,
+                 random_state=0):
         self.check_condition(model,['log','xgb'],"'model' input not correctly defined. Value must be 'log' or 'xgb'")
         self.check_condition(over_samp,[None, 'random','smote'],"'over_samp' input not correctly defined. Value must be None, random or smote")
         self.check_condition(under_samp,[None, 'random','tomek','enn'],"'under_samp' input not correctly defined. Value must be None, random or tomek or enn")
-
-        
+        self.data_loc = data_loc
         self.model_id = model
         self.name=self.model_id
         
@@ -237,10 +237,10 @@ class ModelTrainer():
         self.f1score='Model not evaluated yet'
         self.threshold ='Model not evaluated yet'
         self.pr_auc = 'Model not evaluated yet'
-        self.roc_auc = 'Model not evaluated yet'
         self.precision_array = 'Model not evaluated yet'
         self.recall_array = 'Model not evaluated yet'
         
+        self.roc_auc = 'Model not evaluated yet'
         self.fpr='Model not evaluated yet'
         self.tpr='Model not evaluated yet'
         self.fpr_array='Model not evaluated yet'
@@ -258,17 +258,15 @@ class ModelTrainer():
     =================================================================================================================='''
     def get_model(self):
         if self.model_id =='log':
-            model = LogisticRegression()
+            model = LogisticRegression(class_weight='balanced')
         elif self.model_id=='xgb':
-            model=xgb.XGBClassifier()
+            model=xgb.XGBClassifier(use_label_encoder=False)
         return model
 
     def get_data(self):
-        data=pd.read_csv(r'..\data\feature_final.csv')
-        cat =['Outcome Type', 'Intake Type', 'Intake Condition',
-       'Pet Type', 'MixBreed','BaseBreed', 'MixColor', 'BaseColor', 'NS_intake', 'NS_clinic',
-       'City', 'Gender', 'FirstLetterName', 'NameLengthBin',]
-        data=pd.get_dummies(data,drop_first=True,columns=cat) #one hot encode categorical variables
+        
+        data=pd.read_csv(self.data_loc)
+
         return data
     
     def get_log(self):
@@ -303,8 +301,8 @@ class ModelTrainer():
         if log_class.shape[0]==0:
             f1max = 0
         else:
-            f1max = log_class.F1.max()
-        if self.f1score>f1max:
+            f1max = log_class['PR-AUC'].max()
+        if self.pr_auc>f1max:
             log_update=[[name,self.model_id,self.f1score,self.pr_auc,self.gmean,self.roc_auc,self.threshold,self.threshold_roc,datetime.now()]]
             log_update_df = pd.DataFrame(data=log_update,columns=['Name','ModelType','F1','PR-AUC','G-mean','ROC-AUC','PRThreshold','ROCThreshold','LogTime'])
             self.log=self.log.append(log_update_df)
@@ -320,7 +318,7 @@ class ModelTrainer():
     def optimize_run(self, grid):
         cv = StratifiedKFold(n_splits=5)
         grid_search = RandomizedSearchCV(estimator=self.model, param_distributions=grid, n_jobs=-1, 
-                               cv=cv, scoring='f1',error_score=0,random_state=0)
+                               cv=cv, scoring='average_precision',error_score=0,random_state=0)
         grid_result = grid_search.fit(self.xtrain,self.ytrain)
         # summarize results
         print("Best: %f using %s" % (grid_result.best_score_, grid_result.best_params_))
