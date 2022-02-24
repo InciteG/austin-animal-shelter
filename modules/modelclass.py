@@ -53,17 +53,26 @@ class ModelTrainer():
     ===========
     model: str
         chooses model to load. Only accepts "log" and "xgb" as inputs for Logistic and XGBClassifier respectively.
+    data_loc: str
+        location of data file
     
-    test_size: float (0.0 to 1.0)
+    test_size: float 
         size of testing split for data
     
-    resample: boolean
-        defines whether to use resampling or not
+    over_samp: str (default None)
+        choose over sample technique
     
-    resample_weight: list/array
-        must be 2 integer values. Default is [20,20]. 
-        First element pertains to oversample weighting. 
-        Second element pertains to undersample weighting.
+    under_samp: str (default None)
+        choose under sample technique
+    
+    over_weight: float 
+        choose over sample weight
+    
+    under_weight: float 
+        choose under sample weight
+        
+    random_seed: int
+        choose seed
     
     Attributes
     ===========
@@ -201,6 +210,7 @@ class ModelTrainer():
         self.data_loc = data_loc
         self.model_id = model
         self.name=self.model_id
+        self.random_state = random_state
         
         #private variables
         self._over_samp=over_samp
@@ -221,7 +231,7 @@ class ModelTrainer():
         self.xtrain, self.xtest, self.ytrain, self.ytest = train_test_split(self.iv, 
                                                 self.dv, 
                                                 test_size=test_size, 
-                                                random_state=0,stratify=self.dv) 
+                                                random_state=self.random_state,stratify=self.dv) 
         if over_samp==None:
             pass
         else:
@@ -251,8 +261,8 @@ class ModelTrainer():
         self.shap='SHAP values not defined'
         
     def __repr__(self):
-        return f"ModelTrainer(model={self.model_id},test_size={self._test_size},resample={self._resample},self.resample_weight={self._resample_weight})"
-    
+        return f"ModelTrainer(data_loc={self.data_loc},model={self.model_id},test_size={self._test_size},over_samp={self._over_samp},under_samp={self._under_samp},over_weight={self._over_weight},under_weight={self._under_weight},random_state={self.random_state})"
+
     
     ''' Methods to grab essentials
     =================================================================================================================='''
