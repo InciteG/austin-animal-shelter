@@ -26,6 +26,7 @@ from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.model_selection import StratifiedKFold
 from imblearn.over_sampling import RandomOverSampler,SMOTE, ADASYN
 from imblearn.under_sampling import RandomUnderSampler,TomekLinks, EditedNearestNeighbours
+from sklearn.metrics import confusion_matrix
 
 #vis
 import seaborn as sns
@@ -257,6 +258,8 @@ class ModelTrainer():
         self.tpr_array='Model not evaluated yet'
         self.threshold_roc = 'Model not evaluated yet'
         self.gmean = 'Model not evaluated yet'
+        self.confusion_matrix ='Model not evaluated yet'
+        
         self.feature_importance='Model not evaluated yet'
         self.shap='SHAP values not defined'
         
@@ -412,6 +415,10 @@ class ModelTrainer():
         self.recall=recall[ix]
         self.threshold=thresholds[ix]
         self.f1score=f1score[ix]
+        
+        predictions = [0  if i<self.threshold else 1 for i in yhat]
+        self.confusion_matrix = confusion_matrix(self.ytest,predictions)
+        
         print('precision, recall, threshold, f1score attributes updated')
         
         self.fpr_array, self.tpr_array, thresholds_roc = roc_curve(self.ytest,yhat)
