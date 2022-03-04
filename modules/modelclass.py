@@ -262,6 +262,7 @@ class ModelTrainer():
         
         self.feature_importance='Model not evaluated yet'
         self.shap='SHAP values not defined'
+        self.explainer = 'SHAP explainer not defined'
         
     def __repr__(self):
         return f"ModelTrainer(data_loc={self.data_loc},model={self.model_id},test_size={self._test_size},over_samp={self._over_samp},under_samp={self._under_samp},over_weight={self._over_weight},under_weight={self._under_weight},random_state={self.random_state})"
@@ -355,6 +356,7 @@ class ModelTrainer():
             importance = self.model.feature_importances_
             metric='Gain'
             explainer = shap.TreeExplainer(self.model)
+            self.explainer = explainer
             self.shap = explainer.shap_values(self.xtest)
             mean_shap = [np.mean([abs(i[x]) for i in self.shap]) for x in range(len(self.shap[0]))]
             fi_df['SHAP']=mean_shap
